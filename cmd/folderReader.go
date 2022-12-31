@@ -15,7 +15,7 @@ var folderReaderCmd = &cobra.Command{
 	Short: "폴더 속 파일 목록 출력",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		files, err := ioutil.ReadDir("./")
+		files, err := ioutil.ReadDir(FolderPath)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -23,9 +23,15 @@ var folderReaderCmd = &cobra.Command{
 		for _, f := range files {
 			log.Println(f.Name())
 		}
+
+		log.Print("Path: ", FolderPath)
 	},
 }
 
+var FolderPath string
+
 func init() {
+	folderReaderCmd.Flags().StringVarP(&FolderPath, "path", "p", "", "folder path")
+	folderReaderCmd.MarkFlagRequired("path")
 	rootCmd.AddCommand(folderReaderCmd)
 }
