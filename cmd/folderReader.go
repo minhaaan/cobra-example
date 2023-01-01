@@ -41,8 +41,6 @@ var folderReaderCmd = &cobra.Command{
 		}
 
 		w.Flush()
-
-		log.Print("Path: ", FolderPath)
 	},
 }
 
@@ -55,9 +53,9 @@ func writeExtension(files []os.FileInfo) string {
 		if f.Name() == ".DS_Store" {
 			continue
 		}
-		if f.IsDir() && containProjectSwift(f, "/") {
+		if f.IsDir() && isContainProjectSwift(f, "/") {
 			result += "  public static let " + f.Name() + " = TargetDependency.project(target: \"" + f.Name() + "\", path: .relativeToRoot(\"" + RootPath + "/" + f.Name() + "\"))\n"
-		} else if f.IsDir() {
+		} else if f.IsDir() && isContainFolder(f) {
 			result += "  static let " + strings.ToLower(f.Name()) + " = " + f.Name() + "()\n"
 		}
 	}
@@ -77,7 +75,7 @@ func folderRead(f os.FileInfo, subPath string) string {
 	result += "public struct " + f.Name() + " {\n"
 
 	for _, file := range files {
-		if f.IsDir() && containProjectSwift(file, subPath+f.Name()+"/") {
+		if f.IsDir() && isContainProjectSwift(file, subPath+f.Name()+"/") {
 			result += "  public let " + file.Name() + " = TargetDependency.project(target: \"" + file.Name() + "\", path: .relativeToRoot(\"" + RootPath + subPath + f.Name() + "/" + file.Name() + "\"))\n"
 		}
 	}
@@ -86,7 +84,12 @@ func folderRead(f os.FileInfo, subPath string) string {
 	return result
 }
 
-func checkLast(files []os.FileInfo) bool {
+func isContainProjectSwift(f os.FileInfo, subPath string) bool {
+	files, err := ioutil.ReadDir(FolderPath + subPath + f.Name())
+	if err != nil {
+		return false
+	}
+
 	for _, f := range files {
 		if strings.Contains(f.Name(), "Project.swift") {
 			return true
@@ -95,18 +98,14 @@ func checkLast(files []os.FileInfo) bool {
 	return false
 }
 
-func containProjectSwift(f os.FileInfo, subPath string) bool {
-	files, err := ioutil.ReadDir(FolderPath + subPath + f.Name())
-	println("왓더.. " + FolderPath + subPath + f.Name())
-	println("f is " + f.Name())
+func isContainFolder(f os.FileInfo) bool {
+	files, err := ioutil.ReadDir(FolderPath + "/" + f.Name())
 	if err != nil {
-		//log.Fatal(err)
-		return false
+		log.Fatal(err)
 	}
 
 	for _, f := range files {
-		println("파일이름: " + f.Name())
-		if strings.Contains(f.Name(), "Project.swift") {
+		if f.IsDir() {
 			return true
 		}
 	}
